@@ -109,7 +109,7 @@ npm run preview
 ### Mapping
 - **Leaflet** - Open-source JavaScript library for mobile-friendly interactive maps
 - **React Leaflet** - React components for Leaflet maps
-- **OpenStreetMap** - Free map data
+- **CartoDB Positron** - Clean, modern map tiles (free, no API key required)
 
 ### Development Tools
 - **ESLint** - Code linting
@@ -189,6 +189,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [OpenStreetMap](https://www.openstreetmap.org/) for the map data
+- [CartoDB](https://carto.com/) for the beautiful Positron map tiles
 - [Leaflet](https://leafletjs.com/) for the mapping library
 - [Tailwind CSS](https://tailwindcss.com/) for the styling framework
 - [Lucide](https://lucide.dev/) for the beautiful icons
