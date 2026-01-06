@@ -2,7 +2,6 @@
 
 A modern, interactive web application that allows users to track and visualize IP addresses on a map. Discover the geographic location of any IP address with real-time mapping, distance calculations, and multi-location tracking.
 
-![IP Geolocation Map](https://bolt.new/static/og_default.png)
 
 ## ✨ Features
 
