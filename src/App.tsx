@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, MapPinned } from 'lucide-react';
+import { Search, Loader2, MapPinned, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { IPDetails } from './types';
 import { MapView } from './components/MapView';
 import { IPDetailsCard } from './components/IPDetailsCard';
@@ -7,7 +7,7 @@ import { calculateDistance, calculateBearing } from './utils';
 
 function App() {
   const [userIP, setUserIP] = useState<IPDetails | null>(null);
-  const [targetIP, setTargetIP] = useState<IPDetails | null>(null);
+  const [searchedIPs, setSearchedIPs] = useState<IPDetails[]>([]);
   const [ipInput, setIpInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,38 +46,44 @@ function App() {
       const data = await response.json();
 
       if (data.success) {
-        setTargetIP(data);
+        // Check if IP already exists
+        const exists = searchedIPs.some(ip => ip.ip === data.ip);
+        if (!exists) {
+          setSearchedIPs(prev => [...prev, data]);
+        } else {
+          setError('This IP address has already been searched.');
+        }
+        setIpInput('');
       } else {
         setError('Invalid IP address or lookup failed');
-        setTargetIP(null);
       }
     } catch (err) {
       setError('Failed to fetch IP details. Please try again.');
-      setTargetIP(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const distance =
-    userIP && targetIP
-      ? calculateDistance(
-          userIP.latitude,
-          userIP.longitude,
-          targetIP.latitude,
-          targetIP.longitude
-        )
-      : undefined;
+  const removeIP = (index: number) => {
+    setSearchedIPs(prev => prev.filter((_, i) => i !== index));
+  };
 
-  const direction =
-    userIP && targetIP
-      ? calculateBearing(
-          userIP.latitude,
-          userIP.longitude,
-          targetIP.latitude,
-          targetIP.longitude
-        )
-      : undefined;
+  const moveIP = (index: number, direction: 'up' | 'down') => {
+    setSearchedIPs(prev => {
+      const newIPs = [...prev];
+      if (direction === 'up' && index > 0) {
+        [newIPs[index], newIPs[index - 1]] = [newIPs[index - 1], newIPs[index]];
+      } else if (direction === 'down' && index < newIPs.length - 1) {
+        [newIPs[index], newIPs[index + 1]] = [newIPs[index + 1], newIPs[index]];
+      }
+      return newIPs;
+    });
+  };
+
+  const getMarkerColor = (index: number) => {
+    const colors = ['#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#c026d3', '#db2777'];
+    return colors[index % colors.length];
+  };
 
   if (initialLoading) {
     return (
@@ -146,15 +152,83 @@ function App() {
                 ? { lat: userIP.latitude, lng: userIP.longitude }
                 : null
             }
-            targetLocation={
-              targetIP
-                ? { lat: targetIP.latitude, lng: targetIP.longitude }
-                : null
-            }
+            searchedLocations={searchedIPs}
             userCity={userIP?.city}
-            targetCity={targetIP?.city}
           />
         </div>
+
+        {searchedIPs.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Searched IP Addresses</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {searchedIPs.map((ip, index) => {
+                const distance = userIP ? calculateDistance(
+                  userIP.latitude,
+                  userIP.longitude,
+                  ip.latitude,
+                  ip.longitude
+                ) : undefined;
+                const direction = userIP ? calculateBearing(
+                  userIP.latitude,
+                  userIP.longitude,
+                  ip.latitude,
+                  ip.longitude
+                ) : undefined;
+                const prevIP = index > 0 ? searchedIPs[index - 1] : null;
+                const sequentialDistance = prevIP ? calculateDistance(
+                  prevIP.latitude,
+                  prevIP.longitude,
+                  ip.latitude,
+                  ip.longitude
+                ) : undefined;
+
+                return (
+                  <div key={ip.ip} className="bg-white rounded-lg shadow-md p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: getMarkerColor(index) }}></div>
+                        IP: {ip.ip}
+                      </h3>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => moveIP(index, 'up')}
+                          disabled={index === 0}
+                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Move up"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveIP(index, 'down')}
+                          disabled={index === searchedIPs.length - 1}
+                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Move down"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => removeIP(index)}
+                          className="p-1 text-red-500 hover:text-red-700"
+                          title="Remove IP"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <IPDetailsCard details={ip} distance={distance} direction={direction} />
+                      {sequentialDistance && (
+                        <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                          <p>Distance from previous: <span className="font-semibold">{sequentialDistance.toFixed(2)} km</span></p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {userIP && (
@@ -167,28 +241,35 @@ function App() {
             </div>
           )}
 
-          {targetIP && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-                Target Location
-              </h3>
-              <IPDetailsCard
-                details={targetIP}
-                distance={distance}
-                direction={direction}
-              />
+          {searchedIPs.length === 0 && (
+            <div className="text-center mt-8 p-8 bg-white rounded-lg shadow-lg">
+              <p className="text-gray-600">
+                Enter an IP address above to start tracking locations. All searched IPs will be marked on the map with different colors.
+              </p>
             </div>
           )}
         </div>
 
-        {!targetIP && userIP && (
-          <div className="text-center mt-8 p-8 bg-white rounded-lg shadow-lg">
-            <p className="text-gray-600">
-              Enter an IP address above to compare locations and see the distance between them
+        {/* Copyright Footer */}
+        <footer className="mt-12 pt-8 border-t border-gray-200">
+          <div className="text-center text-gray-500 text-sm">
+            <p>
+              © 2025{' '}
+              <a
+                href="https://github.com/Shawan-Das"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Shawan Das
+              </a>
+              . All rights reserved.
+            </p>
+            <p className="mt-1">
+              Built with ❤️ using React, TypeScript, and Leaflet
             </p>
           </div>
-        )}
+        </footer>
       </div>
     </div>
   );

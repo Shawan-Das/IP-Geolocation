@@ -1,12 +1,13 @@
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { IPDetails } from '../types';
+import { calculateDistance } from '../utils';
 
 interface MapViewProps {
   userLocation: { lat: number; lng: number } | null;
-  targetLocation: { lat: number; lng: number } | null;
+  searchedLocations: IPDetails[];
   userCity?: string;
-  targetCity?: string;
 }
 
 const userIcon = new Icon({
@@ -18,8 +19,8 @@ const userIcon = new Icon({
   shadowSize: [41, 41]
 });
 
-const targetIcon = new Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+const getTargetIcon = (color: string) => new Icon({
+  iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -27,14 +28,20 @@ const targetIcon = new Icon({
   shadowSize: [41, 41]
 });
 
-export function MapView({ userLocation, targetLocation, userCity, targetCity }: MapViewProps) {
-  const center = targetLocation || userLocation || { lat: 23.8103, lng: 90.4125 };
+const markerColors = ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'violet', 'purple', 'pink'];
+
+export function MapView({ userLocation, searchedLocations, userCity }: MapViewProps) {
+  const center = searchedLocations.length > 0
+    ? { lat: searchedLocations[0].latitude, lng: searchedLocations[0].longitude }
+    : userLocation || { lat: 23.8103, lng: 90.4125 };
+
+  const zoom = searchedLocations.length > 1 ? 3 : searchedLocations.length === 1 ? 6 : 10;
 
   return (
     <div className="w-full h-[500px] rounded-lg overflow-hidden shadow-lg">
       <MapContainer
         center={[center.lat, center.lng]}
-        zoom={targetLocation && userLocation ? 4 : 10}
+        zoom={zoom}
         className="w-full h-full"
       >
         <TileLayer
@@ -53,28 +60,51 @@ export function MapView({ userLocation, targetLocation, userCity, targetCity }: 
           </Marker>
         )}
 
-        {targetLocation && (
-          <Marker position={[targetLocation.lat, targetLocation.lng]} icon={targetIcon}>
+        {searchedLocations.map((location, index) => (
+          <Marker
+            key={location.ip}
+            position={[location.latitude, location.longitude]}
+            icon={getTargetIcon(markerColors[index % markerColors.length])}
+          >
             <Popup>
               <div className="text-sm">
-                <strong>Target Location</strong>
-                {targetCity && <p>{targetCity}</p>}
+                <strong>IP: {location.ip}</strong>
+                <p>{location.city}, {location.country}</p>
+                {userLocation && (
+                  <p>Distance: {calculateDistance(userLocation.lat, userLocation.lng, location.latitude, location.longitude).toFixed(2)} km</p>
+                )}
               </div>
             </Popup>
           </Marker>
-        )}
+        ))}
 
-        {userLocation && targetLocation && (
-          <Polyline
-            positions={[
-              [userLocation.lat, userLocation.lng],
-              [targetLocation.lat, targetLocation.lng]
-            ]}
-            color="#3b82f6"
-            weight={2}
-            opacity={0.7}
-            dashArray="10, 10"
-          />
+        {userLocation && searchedLocations.length > 0 && (
+          <>
+            {/* Line from user to first searched location */}
+            <Polyline
+              positions={[
+                [userLocation.lat, userLocation.lng],
+                [searchedLocations[0].latitude, searchedLocations[0].longitude]
+              ]}
+              color="#3b82f6"
+              weight={3}
+              opacity={0.8}
+            />
+            {/* Lines between consecutive searched locations */}
+            {searchedLocations.slice(1).map((location, index) => (
+              <Polyline
+                key={`line-${index}`}
+                positions={[
+                  [searchedLocations[index].latitude, searchedLocations[index].longitude],
+                  [location.latitude, location.longitude]
+                ]}
+                color="#ef4444"
+                weight={2}
+                opacity={0.7}
+                dashArray="10, 10"
+              />
+            ))}
+          </>
         )}
       </MapContainer>
     </div>
