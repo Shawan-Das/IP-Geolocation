@@ -22,8 +22,12 @@ function App() {
       setInitialLoading(true);
       const response = await fetch('https://briefbuletin-api.onrender.com/api/my-location');
       const data = await response.json();
-      if (data.success) {
-        setUserIP(data);
+      const ipAddress = data.ip;
+
+      const ipResponse = await fetch(`https://ipwho.is/${ipAddress}`);
+      const dataIP = await ipResponse.json();
+      if (dataIP.success) {
+        setUserIP(dataIP);
       }
     } catch (err) {
       console.error('Failed to fetch user location:', err);
@@ -41,7 +45,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `https://briefbuletin-api.onrender.com/api/ip-lookup?ip=${ipInput.trim()}`
+        `https://ipwho.is/${ipInput.trim()}`
       );
       const data = await response.json();
 
@@ -147,13 +151,8 @@ function App() {
 
         <div className="mb-8">
           <MapView
-            userLocation={
-              userIP
-                ? { lat: userIP.latitude, lng: userIP.longitude }
-                : null
-            }
+            userLocation={userIP}
             searchedLocations={searchedIPs}
-            userCity={userIP?.city}
           />
         </div>
 
