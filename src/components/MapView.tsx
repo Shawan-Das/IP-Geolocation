@@ -249,67 +249,6 @@ export function MapView({ userLocation, searchedLocations }: MapViewProps) {
 
   return (
     <div className="w-full space-y-3">
-      {/* Map Controls */}
-      <div className="flex gap-2 px-1 flex-wrap">
-        <button
-          onClick={() => setMapTheme('light')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
-            mapTheme === 'light'
-              ? 'bg-blue-500 text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-          }`}
-        >
-          <Sun size={16} />
-          Light
-        </button>
-        <button
-          onClick={() => setMapTheme('dark')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
-            mapTheme === 'dark'
-              ? 'bg-blue-500 text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-          }`}
-        >
-          <Moon size={16} />
-          Dark
-        </button>
-        <button
-          onClick={() => setMapTheme('satellite')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
-            mapTheme === 'satellite'
-              ? 'bg-blue-500 text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-          }`}
-        >
-          <Globe size={16} />
-          Satellite
-        </button>
-
-        {/* Geolocation Button */}
-        <button
-          onClick={handleCurrentLocation}
-          disabled={isLocating}
-          title="Locate me - Uses your browser's geolocation"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
-            isLocating
-              ? 'bg-green-400 text-white shadow-md'
-              : 'bg-green-500 text-white hover:bg-green-600 shadow-md'
-          } disabled:opacity-75 disabled:cursor-not-allowed`}
-        >
-          {isLocating ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Locating...
-            </>
-          ) : (
-            <>
-              <LocateFixed size={16} />
-              My Location
-            </>
-          )}
-        </button>
-      </div>
-
       {/* Location Error Message */}
       {locationError && (
         <div className="px-1">
@@ -319,8 +258,8 @@ export function MapView({ userLocation, searchedLocations }: MapViewProps) {
         </div>
       )}
 
-      {/* Map Container */}
-      <div ref={mapContainerRef} className="w-full h-[600px] rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+      {/* Map Container with floating controls */}
+      <div ref={mapContainerRef} className="w-full h-[600px] rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 relative">
         <MapContainer
           center={center}
           zoom={zoom}
@@ -398,6 +337,66 @@ export function MapView({ userLocation, searchedLocations }: MapViewProps) {
             </>
           )}
         </MapContainer>
+
+        {/* Floating Map Controls */}
+        <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+          {/* Theme Controls */}
+          <div className="flex flex-col gap-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setMapTheme('light')}
+              title="Light Theme"
+              className={`p-2.5 transition-all ${
+                mapTheme === 'light'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <Sun size={20} />
+            </button>
+            <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
+            <button
+              onClick={() => setMapTheme('dark')}
+              title="Dark Theme"
+              className={`p-2.5 transition-all ${
+                mapTheme === 'dark'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <Moon size={20} />
+            </button>
+            <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
+            <button
+              onClick={() => setMapTheme('satellite')}
+              title="Satellite Theme"
+              className={`p-2.5 transition-all ${
+                mapTheme === 'satellite'
+                  ? 'bg-blue-500 text-white'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <Globe size={20} />
+            </button>
+          </div>
+
+          {/* Geolocation Button */}
+          <button
+            onClick={handleCurrentLocation}
+            disabled={isLocating}
+            title="Locate me - Uses your browser's geolocation"
+            className={`p-2.5 rounded-lg transition-all shadow-lg border ${
+              isLocating
+                ? 'bg-green-400 text-white border-green-500'
+                : 'bg-white dark:bg-gray-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-gray-700 border-gray-200 dark:border-gray-700'
+            } disabled:opacity-75 disabled:cursor-not-allowed`}
+          >
+            {isLocating ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <LocateFixed size={20} />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Legend */}
